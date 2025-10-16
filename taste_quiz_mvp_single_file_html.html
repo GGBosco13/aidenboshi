@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Taste Quiz – Movies • Music • Artists • Podcasts</title>
+  <style>
+    :root{
+      /* Aidenboshi パレット（やさしい受け色） */
+      --bg-top: #fff;           /* ほぼ白 */
+      --bg-mid: #fffdf6;        /* ごく淡い黄色 */
+      --bg-bottom:#ffffff;
+  
+      --ink: #4c4a55;           /* 輪郭グレーに近い本文色 */
+      --muted:#8c8a95;          /* サブテキスト */
+  
+      /* 虹色（左→右） */
+      --rainbow-1:#f7a1c4;  /* pink */
+      --rainbow-2:#ffd1d9;  /* peach */
+      --rainbow-3:#fff28a;  /* yellow */
+      --rainbow-4:#bde6c9;  /* mint */
+      --rainbow-5:#a8d8f0;  /* light blue */
+      --rainbow-6:#d7c6ef;  /* lavender */
+  
+      /* UI 基本 */
+      --card:#ffffff;
+      --card-bd:#e9e7ef;
+      --shadow: 0 10px 30px rgba(76,74,85,.10);
+  
+      /* アクセント：星の黄色ベース */
+      --accent:#fff28a;
+      --accent-ink:#504a00;      /* アクセント上の文字色 */
+      --accent-2:#a8d8f0;        /* サブアクセント（進捗など） */
+  
+      --chip:#f7f4ff;            /* ピル背景の淡色 */
+      --chip-bd:#eadff9;
+  
+      --radius:16px;
+    }
+  
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -200px, var(--bg-mid), transparent 60%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    }
+  
+    header{ max-width:960px; margin:24px auto 12px; padding:0 16px; }
+    .title{ font-size:clamp(24px,3vw,34px); font-weight:800; letter-spacing:.2px; color:#5b5660; }
+    .sub{ color:var(--muted); margin-top:4px; }
+  
+    .container{ max-width:960px; margin:0 auto; padding:0 16px 40px; }
+  
+    /* カードを淡色に */
+    .card{
+      background:var(--card);
+      border:1px solid var(--card-bd);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+  
+    /* プログレスを虹色に */
+    .progress{ height:10px; background:#f3f1f7; border-radius:999px; overflow:hidden; margin:14px 0 18px; }
+    .bar{
+      height:100%; width:0%;
+      background: linear-gradient(90deg,
+        var(--rainbow-1),
+        var(--rainbow-2),
+        var(--rainbow-3),
+        var(--rainbow-4),
+        var(--rainbow-5),
+        var(--rainbow-6)
+      );
+      transition:width .35s ease;
+    }
+  
+    .q{ display:none; gap:14px; }
+    .q.active{ display:grid; }
+    .q h3{ margin:0 0 6px; font-size:18px; color:#5b5660; }
+    .hint{ color:var(--muted); font-size:13px; margin-bottom:8px; }
+  
+    .choices{ display:grid; gap:8px; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); }
+  
+    /* ピル（選択肢）をパステルへ */
+    .pill{
+      display:inline-flex; align-items:center; gap:8px; padding:10px 12px;
+      background:var(--chip);
+      border:1px solid var(--chip-bd);
+      border-radius:999px; cursor:pointer; user-select:none;
+      transition: transform .05s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .pill:hover{ box-shadow:0 6px 16px rgba(168,216,240,.25); }
+    .pill:active{ transform:translateY(1px); }
+    .pill input{ accent-color: var(--accent); }
+  
+    .range-row{ display:flex; gap:12px; align-items:center; }
+    input[type=range]{ width:100%; accent-color:var(--accent); }
+  
+    .nav{ display:flex; justify-content:space-between; gap:12px; margin-top:16px; }
+    button{
+      appearance:none; border:none; cursor:pointer; padding:10px 14px;
+      border-radius:12px; font-weight:700;
+    }
+    .btn{
+      background: var(--accent);
+      color: var(--accent-ink);
+      box-shadow: 0 6px 20px rgba(255,242,138,.35);
+    }
+    .btn.secondary{
+      background:#f6f7fb; color:#58566a; border:1px solid #e7e5ef;
+    }
+    .btn.ghost{
+      background:transparent; color:var(--muted); border:1px solid #dedbe8;
+    }
+  
+    .results{ display:none; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:18px; }
+    .results.show{ display:grid; }
+    .card-item{ background:#fff; border:1px solid var(--card-bd); border-radius:14px; padding:14px; display:grid; gap:8px; box-shadow:var(--shadow); }
+    .badge{
+      display:inline-flex; align-items:center; padding:4px 8px; border-radius:999px;
+      background: rgba(255,242,138,.35); color:#6f6a00; font-size:12px; border:1px solid #f4e889;
+    }
+    .why{ color:var(--muted); font-size:12px; }
+  
+    .cols{ display:grid; grid-template-columns:1.2fr .8fr; gap:16px; }
+    @media (max-width:880px){ .cols{ grid-template-columns:1fr; } }
+  
+    .list{ display:grid; gap:10px; }
+  
+    footer{ max-width:960px; margin:18px auto 60px; padding:0 16px; color:var(--muted); font-size:12px; }
+  </style>
+  
+</head>
+<body>
+  <header>
+    <div class="title">Taste Quiz</div>
+    <div class="sub">Answer 10 quick questions. Get smart picks across <strong>movies</strong>, <strong>songs</strong>, <strong>music artists</strong>, and <strong>podcasts</strong>. All client‑side — no backend needed for this demo.</div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="progress" aria-label="Progress"><div id="bar" class="bar"></div></div>
+
+      <div id="qwrap" class="cols">
+        <div id="questions" class="list" aria-live="polite"></div>
+        <aside class="card">
+          <h3 style="margin:0 0 8px">Your preferences</h3>
+          <div id="live" class="hint">Selections will appear here as you go.</div>
+        </aside>
+      </div>
+
+      <div class="nav">
+        <button id="prev" class="btn secondary" disabled>Back</button>
+        <div style="display:flex; gap:8px">
+          <button id="reset" class="btn ghost" title="Clear all answers">Reset</button>
+          <button id="next" class="btn">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="out" style="margin-top:18px">
+      <div class="card">
+        <h3 style="margin:0 0 8px">Recommendations</h3>
+        <div class="hint">Top matches by category. Each card shows a couple of reasons why it fits you.</div>
+        <div id="results" class="results"></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Demo dataset only. For production, replace with APIs (TMDb / Spotify / iTunes / Listen Notes) and cache into your DB. 
+  </footer>
+
+<script>
+/***** 1) Quiz schema (10 Qs) *****/
+const QUIZ = [
+  { id:'mood', type:'single', label:'Pick the mood', hint:'Overall tone you want right now.',
+    choices:[
+      ['calm','Calm & reflective', {mood_calm:1, energy_low:0.6}],
+      ['happy','Uplifting & happy', {mood_happy:1, energy_med:0.4}],
+      ['dark','Dark & intense', {mood_dark:1, energy_high:0.7}],
+      ['melancholy','Bittersweet', {mood_sad:0.8, energy_low:0.3}]
+    ]
+  },
+  { id:'energy', type:'range', label:'Energy level', hint:'From slow/ambient to fast/high‑octane.', min:0, max:100, map:v=>({energy_low:lerp(100-v,0,1), energy_med:bell(v,50,25), energy_high:lerp(v,0,1)}) },
+  { id:'era', type:'single', label:'Preferred era',
+    choices:[ ['classic','Pre‑1990', {era_classic:1}], ['nineties','1990s',{era_90s:1}], ['y2k','2000s',{era_2000s:1}], ['twenty','2010s',{era_2010s:1}], ['now','2020s',{era_2020s:1}] ] },
+  { id:'genres', type:'multi', label:'Genres you enjoy',
+    choices:[ ['pop','Pop',{g_pop:1}], ['rock','Rock',{g_rock:1}], ['hiphop','Hip‑hop',{g_hiphop:1}], ['jazz','Jazz',{g_jazz:1}], ['electronic','Electronic',{g_edm:1}], ['classical','Classical',{g_classical:1}], ['romance','Romance',{g_romance:1}], ['scifi','Sci‑Fi',{g_scifi:1}], ['crime','Crime/Thriller',{g_crime:1}], ['comedy','Comedy',{g_comedy:1}] ] },
+  { id:'indie', type:'range', label:'Mainstream ↔ Indie', hint:'Radio hits vs hidden gems.', min:0, max:100, map:v=>({mainstream:lerp(100-v,0,1), indie:lerp(v,0,1)}) },
+  { id:'length', type:'single', label:'Length preference',
+    choices:[ ['short','Short',{len_short:1}], ['medium','Medium',{len_med:1}], ['long','Long',{len_long:1}] ] },
+  { id:'topics', type:'multi', label:'Topics / themes',
+    choices:[ ['love','Love/Relationships',{t_love:1}], ['space','Space/Science',{t_space:1}], ['history','History',{t_history:1}], ['tech','Tech/Internet',{t_tech:1}], ['crime','Crime',{t_crime:1}], ['self','Self‑improvement',{t_self:1}] ] },
+  { id:'lang', type:'multi', label:'Language(s)',
+    choices:[ ['en','English',{lang_en:1}], ['ja','Japanese',{lang_ja:1}], ['es','Spanish',{lang_es:1}] ] },
+  { id:'content', type:'single', label:'Content sensitivity',
+    choices:[ ['clean','Hide explicit/graphic',{safe:1}], ['ok','All content okay',{}] ], hardFilter: sel => sel==='clean' ? (it=>!it.explicit && !it.graphic) : (it=>true) },
+  { id:'novelty', type:'range', label:'Discovery vs comfort', hint:'New stuff or familiar picks.', min:0, max:100, map:v=>({novel:lerp(v,0,1), familiar:lerp(100-v,0,1)}) }
+];
+
+/***** 2) Tiny demo catalog (replace with API/DB) *****/
+const ITEMS = [
+  // Movies
+  i('movie','La La Land',{era_2010s:1,g_romance:1,g_comedy:0.5,mood_happy:0.7,len_long:1, mainstream:0.9, lang_en:1}, {year:2016, minutes:128, why:['romance','uplifting']}),
+  i('movie','Blade Runner 2049',{era_2010s:1,g_scifi:1,mood_dark:0.9,energy_low:0.3,len_long:1, indie:0.4, lang_en:1}, {year:2017, minutes:164, why:['sci‑fi atmosphere','dark mood']}),
+  i('movie','Spirited Away',{era_2000s:1,g_fantasy:1,mood_calm:0.6,len_med:1, mainstream:0.8, lang_ja:1}, {year:2001, minutes:125, why:['calm fantasy','Japanese']}),
+  i('movie','Before Sunrise',{era_90s:1,g_romance:1,mood_calm:0.7,len_med:1, indie:0.8, lang_en:1}, {year:1995, minutes:101, why:['romance','calm vibe']}),
+
+  // Songs
+  i('song','Blinding Lights – The Weeknd',{era_2020s:1,g_pop:1,g_edm:0.4,energy_high:1, mood_happy:0.6, mainstream:0.95, lang_en:1}, {why:['high energy','pop']}),
+  i('song','夜に駆ける – YOASOBI',{era_2020s:1,g_pop:1,energy_high:0.8, mood_sad:0.4, mainstream:0.85, lang_ja:1}, {why:['J‑Pop','fast tempo']}),
+  i('song','Take Five – Dave Brubeck',{era_1960s:1,g_jazz:1,energy_low:0.6,mood_calm:0.8, indie:0.6, lang_en:1}, {why:['jazz','relaxed']}),
+
+  // Artists
+  i('artist','Taylor Swift',{g_pop:1, mainstream:0.98, mood_happy:0.6, era_2010s:0.6, era_2020s:0.8, lang_en:1}, {why:['mainstream pop','storytelling']}),
+  i('artist','Radwimps',{g_rock:1, mood_mixed:0.5, era_2000s:0.7, era_2010s:0.7, lang_ja:1, indie:0.5}, {why:['J‑Rock','cinematic']}),
+  i('artist','Billie Eilish',{g_pop:0.7, mood_dark:0.7, energy_low:0.5, era_2020s:0.9, lang_en:1, mainstream:0.9}, {why:['moody','modern pop']}),
+
+  // Podcasts
+  i('podcast','99% Invisible',{t_history:0.4,t_design:0.8,len_med:1, mood_calm:0.5, lang_en:1, indie:0.7}, {why:['design stories','calm']}),
+  i('podcast','Reply All (archive)',{t_tech:1,len_med:1, energy_med:0.6, lang_en:1, indie:0.6}, {why:['internet culture','tech']}),
+  i('podcast','Hapa英会話',{t_self:0.6,len_short:1, mood_happy:0.5, lang_ja:1, lang_en:1}, {why:['short lessons','JA/EN bilingual']})
+];
+
+function i(type,title,vec,meta={}){ return {id: crypto.randomUUID(), type, title, vec, ...meta, explicit:false, graphic:false}; }
+
+/***** 3) State *****/
+let step = 0; // 0..9
+const answers = {}; // id -> value
+const filters = []; // functions (it)=>bool
+
+/***** 4) Render engine *****/
+const $q = document.getElementById('questions');
+const $bar = document.getElementById('bar');
+const $prev = document.getElementById('prev');
+const $next = document.getElementById('next');
+const $reset = document.getElementById('reset');
+const $live = document.getElementById('live');
+const $results = document.getElementById('results');
+
+function mount() { renderStep(); wireNav(); }
+
+function renderStep(){
+  $q.innerHTML = '';
+  const q = QUIZ[step];
+  $bar.style.width = `${((step)/QUIZ.length)*100}%`;
+  $prev.disabled = step===0;
+  $next.textContent = step < QUIZ.length-1 ? 'Next' : 'See results';
+
+  const wrap = document.createElement('div'); wrap.className = 'q active';
+  const h = document.createElement('h3'); h.textContent = `${step+1}. ${q.label}`; wrap.appendChild(h);
+  if(q.hint){ const p = document.createElement('div'); p.className='hint'; p.textContent=q.hint; wrap.appendChild(p); }
+
+  const choices = document.createElement('div'); choices.className = 'choices';
+
+  if(q.type==='single'){
+    q.choices.forEach(([key,label,weights])=>{
+      const id = `${q.id}_${key}`;
+      const lab = el('label','pill');
+      const input = el('input'); input.type='radio'; input.name=q.id; input.value=key; input.id=id;
+      input.checked = answers[q.id]===key;
+      input.addEventListener('change',()=>{ answers[q.id]=key; answers[q.id+':w']=weights; updateLive(); });
+      lab.appendChild(input);
+      lab.appendChild(el('span','',label));
+      choices.appendChild(lab);
+    });
+  }
+  if(q.type==='multi'){
+    q.choices.forEach(([key,label,weights])=>{
+      const id = `${q.id}_${key}`;
+      const lab = el('label','pill');
+      const input = el('input'); input.type='checkbox'; input.value=key; input.id=id; input.checked = Array.isArray(answers[q.id]) && answers[q.id].includes(key);
+      input.addEventListener('change',()=>{
+        const arr = new Set(Array.isArray(answers[q.id])?answers[q.id]:[]);
+        if(input.checked) arr.add(key); else arr.delete(key);
+        answers[q.id] = Array.from(arr);
+        const merged = mergeVectors((answers[q.id]||[]).map(k=> q.choices.find(c=>c[0]===k)[2] ));
+        answers[q.id+':w']=merged; updateLive();
+      });
+      lab.appendChild(input);
+      lab.appendChild(el('span','',label));
+      choices.appendChild(lab);
+    });
+  }
+  if(q.type==='range'){
+    const row = el('div','range-row');
+    const input = el('input'); input.type='range'; input.min=q.min; input.max=q.max; input.step=1; input.value = answers[q.id] ?? Math.floor((q.min+q.max)/2);
+    const val = el('div','hint', input.value);
+    input.addEventListener('input',()=>{ val.textContent = input.value; answers[q.id]=Number(input.value); answers[q.id+':w']= q.map(Number(input.value)); updateLive(); });
+    row.appendChild(input); row.appendChild(val); choices.appendChild(row);
+    // seed initial
+    if(!(q.id in answers)){ answers[q.id]=Number(input.value); answers[q.id+':w']= q.map(Number(input.value)); }
+  }
+
+  wrap.appendChild(choices); $q.appendChild(wrap);
+
+  // register hard filter if any
+  if(q.hardFilter){ const sel = answers[q.id]; if(sel){ const f = q.hardFilter(sel); filters.push(f); }
+    else { // ensure change captures
+      $q.addEventListener('change',()=>{ const sel2 = document.querySelector(`[name="${q.id}"]:checked`); if(sel2){ answers[q.id]=sel2.value; answers[q.id+':w']= q.choices.find(c=>c[0]===sel2.value)[2]; } });
+    }
+  }
+
+  updateLive();
+}
+
+function wireNav(){
+  $prev.addEventListener('click',()=>{ if(step>0){ step--; renderStep(); } });
+  $next.addEventListener('click',()=>{
+    if(step < QUIZ.length-1){ step++; renderStep(); }
+    else { showResults(); }
+  });
+  $reset.addEventListener('click',()=>{ Object.keys(answers).forEach(k=>delete answers[k]); filters.length=0; step=0; renderStep(); $results.classList.remove('show'); $results.innerHTML=''; });
+}
+
+function updateLive(){
+  const summary = [];
+  for(const q of QUIZ){
+    if(q.type==='single' && answers[q.id]){
+      const key = answers[q.id]; const lab = q.choices.find(c=>c[0]===key)[1]; summary.push(`<strong>${q.label}:</strong> ${lab}`);
+    }
+    if(q.type==='multi' && Array.isArray(answers[q.id]) && answers[q.id].length){
+      const labs = answers[q.id].map(k=>q.choices.find(c=>c[0]===k)[1]).join(', ');
+      summary.push(`<strong>${q.label}:</strong> ${labs}`);
+    }
+    if(q.type==='range' && (q.id in answers)){
+      summary.push(`<strong>${q.label}:</strong> ${answers[q.id]}`);
+    }
+  }
+  $live.innerHTML = summary.length? summary.map(s=>`<div>${s}</div>`).join('') : 'Selections will appear here as you go.';
+}
+
+/***** 5) Scoring & results *****/
+function buildUserVector(){
+  const parts = [];
+  for(const q of QUIZ){ if(answers[q.id+':w']) parts.push(answers[q.id+':w']); }
+  // merge + normalize
+  const vec = mergeVectors(parts);
+  return normalize(vec);
+}
+
+function showResults(){
+  const user = buildUserVector();
+  const hard = combineFilters(filters);
+  const byType = groupBy(ITEMS.filter(hard), it=>it.type);
+
+  const picks = [];
+  for(const type of Object.keys(byType)){
+    const scored = byType[type].map(it=> ({it, score: scoreItem(user, normalize(it.vec), popPrior(it), freshPrior(it))}))
+      .sort((a,b)=> b.score - a.score);
+    // light diversity (avoid same genre twice if available)
+    const top = reRankDiverse(scored.map(s=>s.it), 3, (a,b)=>overlapKeys(a.vec,b.vec));
+    top.forEach(it=>picks.push(it));
+  }
+  renderResults(picks, user);
+}
+
+function renderResults(items, user){
+  $results.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for(const it of items){
+    const card = el('div','card-item');
+    const line = el('div'); line.innerHTML = `<span class="badge">${it.type}</span> <strong style="margin-left:8px">${it.title}</strong>`; card.appendChild(line);
+    if(it.year){ const meta = el('div','hint', `${it.year} · ${it.minutes? it.minutes+' min' : ''}`); card.appendChild(meta); }
+    const why = explainWhy(user, it.vec, it.why);
+    const p = el('div','why', `Why this: ${why.join(' • ')}`);
+    card.appendChild(p);
+    frag.appendChild(card);
+  }
+  $results.appendChild(frag);
+  $results.classList.add('show');
+  // fill progress bar
+  $bar.style.width = '100%';
+}
+
+/***** 6) Helpers *****/
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e; }
+function mergeVectors(arr){ const out={}; arr.forEach(v=>{ for(const k in v){ out[k]=(out[k]||0)+Number(v[k]); } }); return out; }
+function normalize(v){ const norm = Math.sqrt(Object.values(v).reduce((s,x)=>s+ x*x, 0)) || 1; const o={}; for(const k in v){ o[k]=v[k]/norm; } return o; }
+function dot(a,b){ let s=0; for(const k in a){ if(b[k]) s+= a[k]*b[k]; } return s; }
+function scoreItem(userVec,itemVec,pop=0,fresh=0){ return 0.82*dot(userVec,itemVec) + 0.13*pop + 0.05*fresh; }
+function popPrior(it){ return (it.mainstream||0) * 0.8 + (it.indie? 0.2*it.indie : 0); }
+function freshPrior(it){ return (it.era_2020s?1:0) + (it.era_2010s?0.6:0) + (it.era_2000s?0.35:0); }
+function reRankDiverse(arr, k, overlapFn){ const out=[]; for(const cand of arr){ if(out.length>=k) break; if(out.every(x=> overlapFn(x,cand) < 3)) out.push(cand); } return out.length? out: arr.slice(0,k); }
+function overlapKeys(a,b){ const A = Object.keys(a.vec||a); const B = Object.keys(b.vec||b); return A.filter(x=>B.includes(x)).length; }
+function groupBy(xs, f){ return xs.reduce((acc,x)=>{ const k=f(x); (acc[k]=acc[k]||[]).push(x); return acc; }, {}); }
+function lerp(v,min,max){ return (v-min)/(max-min); }
+function bell(v,center,width){ // 0..1 peak around center
+  const x = (v-center)/width; return Math.exp(-0.5*x*x); }
+function combineFilters(fns){ if(!fns.length) return _=>true; return x=> fns.every(f=>f(x)); }
+function explainWhy(user, item, hints=[]){
+  const overlap = Object.keys(item).filter(k=> user[k] && item[k]>0).sort((a,b)=> item[b]-item[a]).slice(0,3);
+  const map = {
+    mood_calm:'calm vibe', mood_happy:'uplifting', mood_dark:'dark/tense', mood_sad:'melancholic',
+    energy_low:'low energy', energy_med:'medium energy', energy_high:'high energy',
+    era_classic:'classic era', era_90s:'90s', era_2000s:'2000s', era_2010s:'2010s', era_2020s:'2020s',
+    g_pop:'pop', g_rock:'rock', g_hiphop:'hip‑hop', g_jazz:'jazz', g_edm:'electronic', g_classical:'classical', g_romance:'romance', g_scifi:'sci‑fi', g_crime:'crime/thriller', g_comedy:'comedy',
+    len_short:'short', len_med:'medium length', len_long:'long',
+    t_love:'love', t_space:'space/science', t_history:'history', t_tech:'tech', t_crime:'crime', t_self:'self‑improvement',
+    lang_en:'English', lang_ja:'Japanese', lang_es:'Spanish'
+  };
+  const reasons = overlap.map(k=> map[k]||k);
+  if(hints && hints.length) reasons.push(...hints.slice(0,2));
+  return Array.from(new Set(reasons)).slice(0,3);
+}
+
+// init
+mount();
+</script>
+</body>
+</html>
